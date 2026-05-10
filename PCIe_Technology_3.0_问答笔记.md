@@ -1,4 +1,4 @@
-# PCI Express Technology 3.0 — 一问一答
+# PCI Express Technology 3.0 : 一问一答
 
 > 基于 MindShare《PCI Express Technology 3.0》(1057页) 整理
 > 覆盖 Gen1.x / Gen2.x / Gen3.0 核心知识体系

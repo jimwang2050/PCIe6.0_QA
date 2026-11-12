@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PCIe Protocol Watch</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">
+    <span class="logo">PCIe</span>
+    <div>
+      <h1>Protocol Watch</h1>
+      <p>TLP / DLLP / FLIT / PHY 分层协议分析</p>
+    </div>
+  </div>
+  <div class="controls">
+    <label>场景
+      <select id="scenario"></select>
+    </label>
+    <label>Gen
+      <select id="gen">
+        <option value="">默认</option>
+        <option>1</option><option>2</option><option>3</option>
+        <option>4</option><option>5</option><option selected>6</option>
+      </select>
+    </label>
+    <label>Lane
+      <select id="width">
+        <option value="">默认</option>
+        <option>1</option><option>2</option><option>4</option>
+        <option>8</option><option selected>16</option>
+      </select>
+    </label>
+    <button id="load" class="primary">生成 Trace</button>
+    <button id="openModel">传输模型</button>
+    <button id="openDecode">报文解码器</button>
+  </div>
+</header>
+
+<main>
+  <aside class="sidebar">
+    <section class="panel">
+      <h2>链路信息</h2>
+      <dl id="meta" class="kv"></dl>
+    </section>
+    <section class="panel">
+      <h2>统计</h2>
+      <div class="stats" id="stats"></div>
+    </section>
+    <section class="panel grow">
+      <h2>检查项</h2>
+      <ul id="checks" class="checks"></ul>
+    </section>
+  </aside>
+
+  <section class="content">
+    <div class="panel timeline-panel">
+      <div class="panel-head">
+        <h2>时序图</h2>
+        <label class="zoom">缩放
+          <input id="zoom" type="range" min="1" max="12" step="1" value="1">
+          <span id="zoomVal">1×</span>
+        </label>
+        <label class="phasebox"><input id="phaseToggle" type="checkbox" checked> 阶段标注</label>
+        <div class="legend">
+          <span class="lg tlp">TLP</span>
+          <span class="lg dll">DLLP / FLIT</span>
+          <span class="lg phy">PHY</span>
+          <span class="lg state">STATE</span>
+          <span class="lg tx">▸TX 发送</span>
+          <span class="lg rx">◂RX 接收</span>
+        </div>
+      </div>
+      <div id="timeline" class="timeline"></div>
+    </div>
+
+    <div class="panel detail-panel">
+      <div class="panel-head">
+        <h2 id="detailTitle">事件详情</h2>
+        <div class="tabs" id="tabs">
+          <button data-tab="tree" class="active">字段树</button>
+          <button data-tab="layers">分层视图</button>
+          <button data-tab="bits">位域图</button>
+          <button data-tab="hex">原始字节</button>
+          <button data-tab="flit">FLIT 视图</button>
+          <button data-tab="checks">检查项</button>
+        </div>
+      </div>
+      <div id="detail" class="detail"></div>
+    </div>
+  </section>
+</main>
+
+<div id="modelModal" class="modal hidden">
+  <div class="modal-box model-box">
+    <div class="modal-head">
+      <h2>传输模型 · 逐层传递</h2>
+      <select id="modelPkt"></select>
+      <button id="closeModel" class="ghost">关闭</button>
+    </div>
+    <div class="modal-body model-body">
+      <div id="modelStack"></div>
+      <div class="step-grid">
+        <div class="step-panel">
+          <div class="step-head">
+            <span id="stepBadge" class="badge">AP</span>
+            <b id="stepTitle">—</b>
+            <span id="stepCount" class="step-count"></span>
+          </div>
+          <div id="stepDetail" class="stage-detail"></div>
+          <div id="stepBar"></div>
+          <div id="stepChips" class="stage-chips"></div>
+          <div id="stepBytes" class="stage-bytes"></div>
+        </div>
+        <div id="stepLayout" class="tlp-layout"></div>
+      </div>
+      <div class="step-ctl">
+        <button id="stepReset" class="ghost">重置</button>
+        <button id="stepPrev">上一步</button>
+        <button id="stepNext" class="primary">下一步</button>
+        <button id="stepAuto">自动播放</button>
+        <input id="stepRange" type="range" min="0" max="12" step="1" value="0">
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="fieldModal" class="modal hidden">
+  <div class="modal-box field-box">
+    <div class="modal-head">
+      <h2 id="fieldTitle">字段定义</h2>
+      <button id="closeField" class="ghost">关闭</button>
+    </div>
+    <div class="modal-body" id="fieldBody"></div>
+  </div>
+</div>
+
+<div id="decodeModal" class="modal hidden">
+  <div class="modal-box">
+    <div class="modal-head">
+      <h2>报文解码器</h2>
+      <button id="closeDecode" class="ghost">关闭</button>
+    </div>
+    <div class="modal-body">
+      <div class="row">
+        <label>格式
+          <select id="decodeFormat">
+            <option value="hex">Hex 文本（每行一个报文）</option>
+            <option value="csv">CSV（data/bytes 列）</option>
+            <option value="json">JSON</option>
+          </select>
+        </label>
+        <button id="decodeBtn" class="primary">解码</button>
+        <label class="filebtn">载入文件<input type="file" id="decodeFile" hidden></label>
+      </div>
+      <textarea id="decodeInput" spellcheck="false" placeholder="例如：
+45000001 0100FFFF 00000000 00000000 00000000
+40000000 01000000 00001000 00000000 11223344"></textarea>
+      <div id="decodeResult" class="decode-result"></div>
+    </div>
+  </div>
+</div>
+
+<script>window.PCIEWATCH_API = "./traces"; window.PCIEWATCH_STATIC = true;
+document.querySelectorAll('#gen,#width').forEach(function (el) {
+  var lab = el.closest('label'); if (lab) lab.style.display = 'none';
+});</script>
+<script src="app.js"></script>
+</body>
+</html>
